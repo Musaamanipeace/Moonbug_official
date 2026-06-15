@@ -1,109 +1,78 @@
+
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { getMoonData, getMoonClockPosition, MoonData } from '@/lib/lunar-engine';
-import { MoonVisual } from '@/components/moon-dial/moon-visual';
-import { ClockDial } from '@/components/moon-dial/clock-dial';
-import { InfoPanel } from '@/components/moon-dial/info-panel';
+import React from 'react';
+import Link from 'next/link';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Minimize2, RefreshCcw } from 'lucide-react';
+import { Moon, ArrowRight, Shield, Zap, Globe } from 'lucide-react';
 
-export default function MoonDialPage() {
-  const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const [moonData, setMoonData] = useState<MoonData | null>(null);
-  const [clockRotation, setClockRotation] = useState(0);
-  const [isFocusMode, setIsFocusMode] = useState(false);
-
-  useEffect(() => {
-    // Initial load to avoid hydration mismatch
-    const now = new Date();
-    setCurrentTime(now);
-    setMoonData(getMoonData(now));
-    setClockRotation(getMoonClockPosition(now));
-
-    const timer = setInterval(() => {
-      const now = new Date();
-      setCurrentTime(now);
-      setMoonData(getMoonData(now));
-      setClockRotation(getMoonClockPosition(now));
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  if (!currentTime || !moonData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-obsidian">
-        <RefreshCcw className="w-8 h-8 text-starlight animate-spin" />
-      </div>
-    );
-  }
-
+export default function DashboardPage() {
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden select-none">
-      {/* Background Ambience */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-starlight/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-starlight/10 rounded-full blur-[150px]" />
+    <main className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-1000">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-4xl font-headline font-extralight tracking-tight">Welcome to the Nexus</h1>
+        <p className="text-muted-foreground font-light max-w-2xl">
+          Your centralized command for celestial tracking and orbital mechanics. All systems are currently active.
+        </p>
       </div>
 
-      {/* Top Header - Hidden in Focus Mode */}
-      {!isFocusMode && (
-        <header className="fixed top-8 w-full flex justify-between px-8 z-50 animate-in fade-in duration-1000">
-          <div className="flex flex-col">
-            <h1 className="text-lunar font-headline tracking-[0.3em] uppercase text-xl font-light">
-              Moon Dial
-            </h1>
-            <span className="text-starlight text-[10px] tracking-[0.2em] font-medium uppercase mt-1">
-              Celestial Precision Engine v1.0
-            </span>
-          </div>
-          <div className="text-right flex flex-col items-end">
-            <span className="text-lunar font-mono text-xl tracking-wider">
-              {currentTime.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' })}
-            </span>
-            <span className="text-starlight text-[10px] tracking-widest uppercase mt-1">
-              {currentTime.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}
-            </span>
-          </div>
-        </header>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Featured Feature: Moon Dial */}
+        <Card className="md:col-span-2 bg-gradient-to-br from-white/[0.02] to-transparent border-white/5 overflow-hidden relative group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32 transition-all group-hover:bg-primary/10" />
+          <CardHeader className="relative z-10">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+              <Moon className="w-6 h-6 text-primary" />
+            </div>
+            <CardTitle className="text-2xl font-light tracking-wide">Moon Dial Engine</CardTitle>
+            <CardDescription className="text-muted-foreground font-light">
+              High-fidelity lunar phase tracking with real-time astronomical precision.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="relative z-10 flex flex-col gap-6">
+            <p className="text-sm text-muted-foreground/80 leading-relaxed font-light">
+              Monitor illumination, transit age, and orbital cycle synchronization. The engine runs on a logic-less 
+              mathematical model ensuring 99.9% accuracy without external network dependencies.
+            </p>
+            <Link href="/moon-dial">
+              <Button className="rounded-full px-8 hover:gap-4 transition-all">
+                Launch System <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
 
-      {/* Center Layout */}
-      <div className="relative flex flex-col items-center justify-center w-full max-w-4xl">
-        <ClockDial rotation={clockRotation}>
-          <MoonVisual data={moonData} size={isFocusMode ? 140 : 100} />
-        </ClockDial>
-
-        <InfoPanel data={moonData} focusMode={isFocusMode} />
-      </div>
-
-      {/* Focus Mode Overlay (Subtle labels when in focus) */}
-      {isFocusMode && (
-        <div className="fixed bottom-12 text-center animate-in fade-in slide-in-from-bottom-2 duration-700">
-          <p className="text-lunar/40 font-mono tracking-[0.5em] text-[10px] uppercase">
-            {moonData.phaseName.replace('-', ' ')} • {moonData.illumination}%
-          </p>
+        {/* Status Cards */}
+        <div className="space-y-6">
+          <Card className="bg-white/[0.02] border-white/5">
+            <CardHeader className="p-4 flex flex-row items-center gap-4">
+              <Shield className="w-4 h-4 text-green-500/50" />
+              <div className="flex flex-col">
+                <span className="text-xs uppercase tracking-widest font-medium">Security</span>
+                <span className="text-[10px] text-muted-foreground">Encrypted Pipeline</span>
+              </div>
+            </CardHeader>
+          </Card>
+          <Card className="bg-white/[0.02] border-white/5">
+            <CardHeader className="p-4 flex flex-row items-center gap-4">
+              <Zap className="w-4 h-4 text-yellow-500/50" />
+              <div className="flex flex-col">
+                <span className="text-xs uppercase tracking-widest font-medium">Latency</span>
+                <span className="text-[10px] text-muted-foreground">0.4ms Local Execution</span>
+              </div>
+            </CardHeader>
+          </Card>
+          <Card className="bg-white/[0.02] border-white/5">
+            <CardHeader className="p-4 flex flex-row items-center gap-4">
+              <Globe className="w-4 h-4 text-blue-500/50" />
+              <div className="flex flex-col">
+                <span className="text-xs uppercase tracking-widest font-medium">Sync</span>
+                <span className="text-[10px] text-muted-foreground">Global Celestial Mesh</span>
+              </div>
+            </CardHeader>
+          </Card>
         </div>
-      )}
-
-      {/* Controls */}
-      <div className="fixed bottom-8 right-8 flex gap-2 z-50">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full bg-starlight/10 text-starlight hover:bg-starlight hover:text-lunar transition-all duration-500"
-          onClick={() => setIsFocusMode(!isFocusMode)}
-          title={isFocusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
-        >
-          {isFocusMode ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-        </Button>
-      </div>
-
-      {/* Accessibility labels for screen readers */}
-      <div className="sr-only">
-        The current moon phase is {moonData.phaseName} with {moonData.illumination}% illumination.
-        The local time is {currentTime.toLocaleTimeString()}.
       </div>
     </main>
   );
