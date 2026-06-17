@@ -11,7 +11,8 @@
         "studentId": { "type": "string" },
         "email": { "type": "string" },
         "rewardsBalance": { "type": "number", "description": "Currency earned via surveys" },
-        "hasPaid": { "type": "boolean", "description": "Unlock nickname changes" }
+        "hasPaid": { "type": "boolean", "description": "Unlock nickname changes" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["nickname", "studentId"]
     },
@@ -23,7 +24,6 @@
         "name": { "type": "string" },
         "description": { "type": "string" },
         "color": { "type": "string" },
-        "icon": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "deadline": { "type": "string", "format": "date-time" },
         "reminderAt": { "type": "string", "format": "date-time" },
@@ -51,10 +51,10 @@
         "scopeId": { "type": "string" },
         "type": { "type": "string", "enum": ["note", "list", "todo", "idea", "event", "reminder", "deadline"] },
         "isCompleted": { "type": "boolean" },
-        "voiceDataUri": { "type": "string" },
+        "ownerId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["content", "scopeId"]
+      "required": ["content", "scopeId", "ownerId"]
     },
     "Survey": {
       "title": "Survey",
@@ -72,7 +72,7 @@
     "providers": ["google.com"]
   },
   "firestore": {
-    "/users/{userId}/profile": {
+    "/users/{userId}/profile/data": {
       "schema": "Profile",
       "description": "Student identity"
     },

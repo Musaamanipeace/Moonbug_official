@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -7,6 +8,7 @@ import { ScopeCard } from '@/components/nexus/scope-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Plus, 
   Trophy, 
@@ -14,11 +16,20 @@ import {
   ChevronRight,
   ShieldCheck,
   MessageSquare,
-  BookOpen
+  BookOpen,
+  X
 } from 'lucide-react';
-import { collection, query, orderBy, doc, setDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
+} from '@/components/ui/dialog';
 
 export default function LuminousDashboard() {
   const { user, loading: userLoading } = useUser();
@@ -26,6 +37,12 @@ export default function LuminousDashboard() {
   const [activeTab, setActiveTab] = useState<'scopes' | 'hub'>('scopes');
   const [nickname, setNickname] = useState('');
   const [isSettingUp, setIsSettingUp] = useState(false);
+
+  // Scope Creation State
+  const [newScopeName, setNewScopeName] = useState('');
+  const [newScopeDesc, setNewScopeDesc] = useState('');
+  const [isCreatingScope, setIsCreatingScope] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Profile stabilization
   const profileRef = useMemoFirebase(() => {
@@ -66,6 +83,36 @@ export default function LuminousDashboard() {
         errorEmitter.emit('permission-error', permissionError);
       })
       .finally(() => setIsSettingUp(false));
+  };
+
+  const handleCreateScope = () => {
+    if (!db || !user || !newScopeName) return;
+    setIsCreatingScope(true);
+
+    const scopeData = {
+      name: newScopeName,
+      description: newScopeDesc,
+      createdAt: new Date().toISOString(),
+      tasks: [],
+      color: 'blue'
+    };
+
+    const scopesRef = collection(db, 'users', user.uid, 'scopes');
+    addDoc(scopesRef, scopeData)
+      .catch(async (err) => {
+        const permissionError = new FirestorePermissionError({
+          path: scopesRef.path,
+          operation: 'create',
+          requestResourceData: scopeData
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
+        setIsCreatingScope(false);
+        setIsDialogOpen(false);
+        setNewScopeName('');
+        setNewScopeDesc('');
+      });
   };
 
   if (userLoading || profileLoading) {
@@ -169,15 +216,54 @@ export default function LuminousDashboard() {
               {scopes?.map((scope) => (
                 <ScopeCard key={scope.id} scope={scope} />
               ))}
-              <Button 
-                variant="outline" 
-                className="h-full min-h-[200px] border-dashed border-white/10 bg-white/[0.01] hover:bg-white/[0.03] transition-all rounded-xl flex flex-col gap-2 group"
-              >
-                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Plus className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <span className="text-xs uppercase tracking-widest text-muted-foreground">New Scope</span>
-              </Button>
+              
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="h-full min-h-[200px] border-dashed border-white/10 bg-white/[0.01] hover:bg-white/[0.03] transition-all rounded-xl flex flex-col gap-2 group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Plus className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <span className="text-xs uppercase tracking-widest text-muted-foreground">New Scope</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-obsidian border-white/10">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-light tracking-tight text-lunar">Provision New Scope</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Scope Name</Label>
+                      <Input 
+                        placeholder="e.g. Physics 101" 
+                        value={newScopeName}
+                        onChange={(e) => setNewScopeName(e.target.value)}
+                        className="bg-white/5 border-white/10"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Description</Label>
+                      <Textarea 
+                        placeholder="Focus area details..." 
+                        value={newScopeDesc}
+                        onChange={(e) => setNewScopeDesc(e.target.value)}
+                        className="bg-white/5 border-white/10"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      disabled={!newScopeName || isCreatingScope} 
+                      onClick={handleCreateScope}
+                      className="w-full"
+                    >
+                      {isCreatingScope ? 'Syncing...' : 'Initialize Scope'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
             
             <div className="space-y-6">
@@ -186,7 +272,9 @@ export default function LuminousDashboard() {
                   <Zap className="w-3 h-3 text-blue-400" /> AI Insights
                 </h3>
                 <p className="text-xs text-muted-foreground font-light mb-4 leading-relaxed">
-                  Strategy: Your "Software Dev" scope has 3 tasks pending. Consider focusing on the CLI module today to maximize node uptime.
+                  {scopes && scopes.length > 0 
+                    ? `Node check: You have ${scopes.length} active Scopes. Your latest activity in "${scopes[0].name}" suggests a high focus period is optimal now.`
+                    : "No active Scopes detected. Create a Scope to begin pedagogical tracking."}
                 </p>
                 <Button variant="link" className="p-0 h-auto text-[10px] uppercase text-blue-400">Expand Strategy</Button>
               </div>
