@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Moon, LayoutDashboard, Compass, User } from 'lucide-react';
+import { Moon, LayoutDashboard, Compass, User, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
@@ -58,6 +58,19 @@ export function Header() {
             >
               <Moon className="w-3 h-3 mr-2" />
               Moon Dial
+            </Button>
+          </Link>
+          <Link href="/surveys">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={cn(
+                "text-xs tracking-widest uppercase font-light",
+                pathname === "/surveys" ? "bg-white/5 text-primary" : "text-muted-foreground"
+              )}
+            >
+              <ClipboardList className="w-3 h-3 mr-2" />
+              Surveys
             </Button>
           </Link>
         </nav>
