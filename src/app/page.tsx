@@ -1,8 +1,8 @@
-
 "use client";
 
-import React, { useState } from 'react';
-import { useUser, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useUser, useFirestore } from '@/firebase';
+import { useSchoolAuth, SchoolAuthData } from '@/firebase/auth/school-auth';
 import { QuickInput } from '@/components/nexus/quick-input';
 import { ScopeCard } from '@/components/nexus/scope-card';
 import { Button } from '@/components/ui/button';
@@ -17,9 +17,8 @@ import {
   ShieldCheck,
   MessageSquare,
   BookOpen,
-  X
 } from 'lucide-react';
-import { collection, query, orderBy, doc, setDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, doc, addDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import {
@@ -30,12 +29,25 @@ import {
   DialogTrigger,
   DialogFooter
 } from '@/components/ui/dialog';
+import { getOfflineProfile, OfflineProfile, getOfflineScopes, createOfflineScope } from '@/lib/offline-storage';
 
 export default function LuminousDashboard() {
-  const { user, loading: userLoading } = useUser();
+  // Try school auth first, fallback to Firebase auth
+  const { user: schoolUser, loading: schoolLoading, loginWithSchool } = useSchoolAuth();
+  const { user: firebaseUser, loading: userLoading } = useUser();
   const db = useFirestore();
+  
+  const user = schoolUser || firebaseUser;
+  const loading = schoolLoading || userLoading;
+  
   const [activeTab, setActiveTab] = useState<'scopes' | 'hub'>('scopes');
-  const [nickname, setNickname] = useState('');
+  const [schoolData, setSchoolData] = useState<SchoolAuthData>({
+    schoolName: '',
+    schoolId: '',
+    studentName: '',
+    studentEmail: '',
+    nickname: '',
+  });
   const [isSettingUp, setIsSettingUp] = useState(false);
 
   // Scope Creation State
@@ -43,79 +55,87 @@ export default function LuminousDashboard() {
   const [newScopeDesc, setNewScopeDesc] = useState('');
   const [isCreatingScope, setIsCreatingScope] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  // Profile state
+  const [profile, setProfile] = useState<OfflineProfile | null>(null);
+  const [scopes, setScopes] = useState<any[]>([]);
 
-  // Profile stabilization
-  const profileRef = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    return doc(db, 'users', user.uid, 'profile', 'data');
-  }, [db, user]);
+  // Load profile and scopes from offline storage
+  useEffect(() => {
+    const loadLocalData = async () => {
+      const localProfile = await getOfflineProfile();
+      setProfile(localProfile || null);
+      
+      if (user?.uid) {
+        const localScopes = await getOfflineScopes(user.uid);
+        setScopes(localScopes);
+      }
+    };
+    loadLocalData();
+  }, [user]);
 
-  const { data: profile, loading: profileLoading } = useDoc(profileRef);
-
-  // Scopes stabilization
-  const scopesQuery = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    return query(collection(db, 'users', user.uid, 'scopes'), orderBy('createdAt', 'desc'));
-  }, [db, user]);
-
-  const { data: scopes, loading: scopesLoading } = useCollection(scopesQuery);
-
-  const handleCreateProfile = () => {
-    if (!db || !user || !nickname) return;
+  const handleCreateProfile = async () => {
+    if (!schoolData.schoolName || !schoolData.schoolId || !schoolData.studentName || !schoolData.studentEmail || !schoolData.nickname) {
+      return;
+    }
     setIsSettingUp(true);
     
-    const profileData = {
-      nickname,
-      email: user.email,
-      studentId: `STU-${Math.floor(Math.random() * 10000)}`,
-      rewardsBalance: 0,
-      hasPaid: false,
-      createdAt: new Date().toISOString()
-    };
-
-    setDoc(profileRef!, profileData)
-      .catch(async (err) => {
-        const permissionError = new FirestorePermissionError({
-          path: profileRef!.path,
-          operation: 'create',
-          requestResourceData: profileData
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => setIsSettingUp(false));
+    // Use school auth
+    const result = await loginWithSchool(schoolData);
+    
+    if (result.success) {
+      setProfile({
+        id: 'current',
+        nickname: schoolData.nickname,
+        email: schoolData.studentEmail,
+        studentId: result.studentId,
+        rewardsBalance: 0,
+        hasPaid: false,
+        createdAt: new Date().toISOString(),
+        synced: false,
+      });
+    }
+    setIsSettingUp(false);
   };
 
-  const handleCreateScope = () => {
+  const handleCreateScope = async () => {
     if (!db || !user || !newScopeName) return;
     setIsCreatingScope(true);
 
     const scopeData = {
+      id: `scope-${Date.now()}`,
       name: newScopeName,
       description: newScopeDesc,
       createdAt: new Date().toISOString(),
       tasks: [],
-      color: 'blue'
+      color: 'blue',
+      synced: false,
     };
 
-    const scopesRef = collection(db, 'users', user.uid, 'scopes');
-    addDoc(scopesRef, scopeData)
-      .catch(async (err) => {
-        const permissionError = new FirestorePermissionError({
-          path: scopesRef.path,
-          operation: 'create',
-          requestResourceData: scopeData
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => {
-        setIsCreatingScope(false);
-        setIsDialogOpen(false);
-        setNewScopeName('');
-        setNewScopeDesc('');
+    // Save to offline storage first
+    await createOfflineScope(scopeData);
+    
+    // Try to sync to Firebase
+    try {
+      const scopesRef = collection(db, 'users', user.uid, 'scopes');
+      await addDoc(scopesRef, scopeData);
+    } catch (err) {
+      const permissionError = new FirestorePermissionError({
+        path: `users/${user.uid}/scopes`,
+        operation: 'create',
+        requestResourceData: scopeData
       });
+      errorEmitter.emit('permission-error', permissionError);
+    }
+    
+    setScopes([...scopes, scopeData]);
+    setIsCreatingScope(false);
+    setIsDialogOpen(false);
+    setNewScopeName('');
+    setNewScopeDesc('');
   };
 
-  if (userLoading || profileLoading) {
+  if (loading) {
     return (
       <div className="h-[calc(100vh-64px)] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -130,22 +150,67 @@ export default function LuminousDashboard() {
         <div className="space-y-2 text-center">
           <ShieldCheck className="w-12 h-12 text-primary mx-auto mb-4" />
           <h2 className="text-2xl font-light tracking-tight text-lunar">Moonbug Activation</h2>
-          <p className="text-xs text-muted-foreground uppercase tracking-widest">Select your unique node identifier</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest">School Registration</p>
         </div>
         
         <div className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="schoolName" className="text-[10px] uppercase tracking-widest text-muted-foreground">School Name</Label>
+            <Input 
+              id="schoolName"
+              placeholder="e.g. Lincoln High"
+              value={schoolData.schoolName}
+              onChange={(e) => setSchoolData({...schoolData, schoolName: e.target.value})}
+              className="bg-white/5 border-white/10"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="schoolId" className="text-[10px] uppercase tracking-widest text-muted-foreground">School ID</Label>
+            <Input 
+              id="schoolId"
+              placeholder="e.g. LINC-001"
+              value={schoolData.schoolId}
+              onChange={(e) => setSchoolData({...schoolData, schoolId: e.target.value})}
+              className="bg-white/5 border-white/10"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="studentName" className="text-[10px] uppercase tracking-widest text-muted-foreground">Student Name</Label>
+            <Input 
+              id="studentName"
+              placeholder="e.g. Alex Johnson"
+              value={schoolData.studentName}
+              onChange={(e) => setSchoolData({...schoolData, studentName: e.target.value})}
+              className="bg-white/5 border-white/10"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="studentEmail" className="text-[10px] uppercase tracking-widest text-muted-foreground">Student Email</Label>
+            <Input 
+              id="studentEmail"
+              placeholder="e.g. alex@school.edu"
+              value={schoolData.studentEmail}
+              onChange={(e) => setSchoolData({...schoolData, studentEmail: e.target.value})}
+              className="bg-white/5 border-white/10"
+            />
+          </div>
+          
           <div className="space-y-2">
             <Label htmlFor="nickname" className="text-[10px] uppercase tracking-widest text-muted-foreground">Nickname (Permanent)</Label>
             <Input 
               id="nickname"
               placeholder="e.g. Explorer_01"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
+              value={schoolData.nickname}
+              onChange={(e) => setSchoolData({...schoolData, nickname: e.target.value})}
               className="bg-white/5 border-white/10"
             />
           </div>
+          
           <Button 
-            disabled={!nickname || isSettingUp} 
+            disabled={!schoolData.schoolName || !schoolData.schoolId || !schoolData.studentName || !schoolData.studentEmail || !schoolData.nickname || isSettingUp} 
             onClick={handleCreateProfile}
             className="w-full py-6 uppercase tracking-widest text-xs"
           >

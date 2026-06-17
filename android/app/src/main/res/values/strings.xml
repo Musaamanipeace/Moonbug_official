@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">moonbug</string>
+    <string name="title_activity_main">moonbug</string>
+    <string name="package_name">com.moonbug.app</string>
+    <string name="custom_url_scheme">com.moonbug.app</string>
+</resources>

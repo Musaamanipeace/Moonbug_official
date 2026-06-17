@@ -49,6 +49,7 @@ export function useSchoolAuth() {
     
     // Create profile
     const profile: OfflineProfile = {
+      id: 'current',
       nickname: data.nickname,
       email: data.studentEmail,
       studentId,

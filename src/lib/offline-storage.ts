@@ -29,6 +29,7 @@ export interface OfflineScope {
 }
 
 export interface OfflineProfile {
+  id: string;
   nickname: string;
   email?: string;
   studentId: string;
@@ -176,7 +177,7 @@ export async function updateOfflineScope(scope: OfflineScope) {
 // Profile operations
 export async function saveOfflineProfile(profile: OfflineProfile) {
   const database = await initOfflineDB();
-  return database.put('profile', { ...profile, synced: false });
+  return database.put('profile', { ...profile, id: 'current', synced: false });
 }
 
 export async function getOfflineProfile(): Promise<OfflineProfile | undefined> {
