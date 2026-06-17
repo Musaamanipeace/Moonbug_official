@@ -13,7 +13,8 @@ import {
   Zap,
   ChevronRight,
   ShieldCheck,
-  MessageSquare
+  MessageSquare,
+  BookOpen
 } from 'lucide-react';
 import { collection, query, orderBy, doc, setDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -112,7 +113,7 @@ export default function LuminousDashboard() {
   }
 
   return (
-    <main className="p-6 max-w-6xl mx-auto space-y-10 animate-in fade-in duration-700">
+    <main className="p-6 md:p-12 max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700">
       {/* System Status / Branding */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div className="space-y-1">
@@ -161,67 +162,111 @@ export default function LuminousDashboard() {
         </button>
       </div>
 
-      {activeTab === 'scopes' ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {scopes?.map((scope) => (
-              <ScopeCard key={scope.id} scope={scope} />
-            ))}
-            <Button 
-              variant="outline" 
-              className="h-full min-h-[160px] border-dashed border-white/10 bg-white/[0.01] hover:bg-white/[0.03] transition-all rounded-xl flex flex-col gap-2 group"
-            >
-              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Plus className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <span className="text-xs uppercase tracking-widest text-muted-foreground">New Scope</span>
-            </Button>
-          </div>
-          
-          <div className="space-y-6">
-            <div className="p-6 rounded-xl bg-blue-500/5 border border-blue-500/10">
-              <h3 className="text-xs font-semibold uppercase tracking-widest mb-4 flex items-center gap-2">
-                <Zap className="w-3 h-3 text-blue-400" /> AI Insights
-              </h3>
-              <p className="text-xs text-muted-foreground font-light mb-4">
-                Strategy: Focus on "Physics Hub" surveys today to boost your node rewards.
-              </p>
-              <Button variant="link" className="p-0 h-auto text-[10px] uppercase text-blue-400">Expand Strategy</Button>
+      <div className="min-h-[400px]">
+        {activeTab === 'scopes' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {scopes?.map((scope) => (
+                <ScopeCard key={scope.id} scope={scope} />
+              ))}
+              <Button 
+                variant="outline" 
+                className="h-full min-h-[200px] border-dashed border-white/10 bg-white/[0.01] hover:bg-white/[0.03] transition-all rounded-xl flex flex-col gap-2 group"
+              >
+                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Plus className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">New Scope</span>
+              </Button>
             </div>
             
-            <div className="p-6 rounded-xl bg-purple-500/5 border border-purple-500/10">
-              <h3 className="text-xs font-semibold uppercase tracking-widest mb-4 flex items-center gap-2">
-                <Trophy className="w-3 h-3 text-purple-400" /> Achievements
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-lunar/70">Note Streak</span>
-                  <span className="text-[10px] font-mono text-purple-400">3 Days</span>
+            <div className="space-y-6">
+              <div className="p-6 rounded-xl bg-blue-500/5 border border-blue-500/10">
+                <h3 className="text-xs font-semibold uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <Zap className="w-3 h-3 text-blue-400" /> AI Insights
+                </h3>
+                <p className="text-xs text-muted-foreground font-light mb-4 leading-relaxed">
+                  Strategy: Your "Software Dev" scope has 3 tasks pending. Consider focusing on the CLI module today to maximize node uptime.
+                </p>
+                <Button variant="link" className="p-0 h-auto text-[10px] uppercase text-blue-400">Expand Strategy</Button>
+              </div>
+              
+              <div className="p-6 rounded-xl bg-purple-500/5 border border-purple-500/10">
+                <h3 className="text-xs font-semibold uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <Trophy className="w-3 h-3 text-purple-400" /> Achievements
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] text-lunar/70">Note Streak</span>
+                    <span className="text-[10px] font-mono text-purple-400">3 Days</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full w-3/4 bg-purple-500/50" />
+                  </div>
                 </div>
-                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full w-3/4 bg-purple-500/50" />
+              </div>
+
+              <div className="p-6 rounded-xl bg-white/[0.01] border border-white/5">
+                <h3 className="text-xs font-semibold uppercase tracking-widest mb-4 flex items-center gap-2 text-muted-foreground">
+                  <BookOpen className="w-3 h-3" /> System Logs
+                </h3>
+                <div className="space-y-2">
+                  <p className="text-[9px] font-mono text-muted-foreground">12:00:01 - Sync initiated</p>
+                  <p className="text-[9px] font-mono text-muted-foreground">12:05:44 - STT Model Ready</p>
+                  <p className="text-[9px] font-mono text-green-500/50">12:10:12 - Local Node Secured</p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="p-6 rounded-xl bg-white/[0.02] border border-white/5 hover:border-primary/20 transition-all cursor-pointer space-y-4">
-            <div className="flex justify-between items-start">
-              <div className="p-2 rounded-lg bg-orange-500/10 text-orange-400">
-                <MessageSquare className="w-5 h-5" />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="p-8 rounded-xl bg-white/[0.02] border border-white/5 hover:border-primary/20 transition-all cursor-pointer group space-y-6">
+              <div className="flex justify-between items-start">
+                <div className="p-3 rounded-lg bg-orange-500/10 text-orange-400">
+                  <MessageSquare className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-mono text-green-500 block">+0.0050 SAT</span>
+                  <span className="text-[9px] text-muted-foreground uppercase tracking-widest">Priority: High</span>
+                </div>
               </div>
-              <span className="text-[10px] font-mono text-green-500/60">+0.0050 SAT</span>
+              <div className="space-y-2">
+                <h3 className="text-xl font-light text-lunar group-hover:text-primary transition-colors">Community Resource Survey</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Identify essential survival and learning resources needed in your local zone. Your data helps NGOs allocate inventory.
+                </p>
+              </div>
+              <div className="pt-4">
+                <Button className="w-full text-xs uppercase tracking-widest py-6">Begin Participation</Button>
+              </div>
             </div>
-            <h3 className="text-lg font-light">Community Resource Survey</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Identify survival resources needed in your local learning zone.
-            </p>
-            <Button className="w-full text-xs uppercase tracking-widest py-6">Begin Survey</Button>
+
+            <div className="p-8 rounded-xl bg-white/[0.01] border border-white/5 border-dashed flex flex-col items-center justify-center text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground/30">
+                <Zap className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-light text-muted-foreground">More surveys provisioning...</p>
+                <p className="text-[10px] text-muted-foreground/50 uppercase tracking-[0.2em]">ETA: 14:00 UTC</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer Branding */}
+      <footer className="pt-12 border-t border-white/5 pb-8">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-[0.3em]">
+            Moonbug OS v1.0.4-Alpha • Peer-to-Peer Pedagogy
+          </p>
+          <div className="flex gap-6">
+            <span className="text-[10px] text-muted-foreground hover:text-lunar cursor-pointer transition-colors uppercase tracking-widest">Docs</span>
+            <span className="text-[10px] text-muted-foreground hover:text-lunar cursor-pointer transition-colors uppercase tracking-widest">Terms</span>
+            <span className="text-[10px] text-muted-foreground hover:text-lunar cursor-pointer transition-colors uppercase tracking-widest">Privacy</span>
           </div>
         </div>
-      )}
+      </footer>
     </main>
   );
 }

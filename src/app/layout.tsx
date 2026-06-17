@@ -23,7 +23,7 @@ export default function RootLayout({
       <body className="font-body antialiased selection:bg-starlight selection:text-lunar">
         <FirebaseClientProvider>
           <Header />
-          <div className="pt-16 min-h-screen">
+          <div className="pt-16 min-h-screen relative z-10">
             {children}
           </div>
         </FirebaseClientProvider>
