@@ -1,111 +1,227 @@
-
 "use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { useUser, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { QuickInput } from '@/components/nexus/quick-input';
+import { ScopeCard } from '@/components/nexus/scope-card';
 import { Button } from '@/components/ui/button';
-import { Plus, FolderKanban, StickyNote, Mic, Search, ListTodo } from 'lucide-react';
-import { useUser } from '@/firebase';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { 
+  Plus, 
+  Trophy, 
+  MessageSquare, 
+  Zap,
+  ChevronRight,
+  ShieldCheck
+} from 'lucide-react';
+import { collection, query, orderBy, doc, setDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
-export default function MoonbugDashboard() {
-  const { user } = useUser();
+export default function LuminousDashboard() {
+  const { user, loading: userLoading } = useUser();
+  const db = useFirestore();
+  const [activeTab, setActiveTab] = useState<'scopes' | 'hub'>('scopes');
+  const [nickname, setNickname] = useState('');
+  const [isSettingUp, setIsSettingUp] = useState(false);
 
-  return (
-    <main className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-1000">
-      <div className="flex justify-between items-end">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-headline font-extralight tracking-tight">Moonbug Control</h1>
-          <p className="text-muted-foreground font-light max-w-2xl">
-            {user ? `Welcome back, ${user.displayName}. System active.` : 'Please sign in to access your scopes and notes.'}
+  // Profile stabilization
+  const profileRef = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return doc(db, 'users', user.uid, 'profile', 'data');
+  }, [db, user]);
+
+  const { data: profile, loading: profileLoading } = useDoc(profileRef);
+
+  // Scopes stabilization
+  const scopesQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'users', user.uid, 'scopes'), orderBy('createdAt', 'desc'));
+  }, [db, user]);
+
+  const { data: scopes, loading: scopesLoading } = useCollection(scopesQuery);
+
+  const handleCreateProfile = () => {
+    if (!db || !user || !nickname) return;
+    setIsSettingUp(true);
+    
+    const profileData = {
+      nickname,
+      email: user.email,
+      studentId: `STU-${Math.floor(Math.random() * 10000)}`,
+      rewardsBalance: 0,
+      hasPaid: false,
+      createdAt: new Date().toISOString()
+    };
+
+    setDoc(profileRef!, profileData)
+      .catch(async (err) => {
+        const permissionError = new FirestorePermissionError({
+          path: profileRef!.path,
+          operation: 'create',
+          requestResourceData: profileData
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => setIsSettingUp(false));
+  };
+
+  if (userLoading || profileLoading) {
+    return (
+      <div className="h-[calc(100vh-64px)] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Initial Onboarding / Profile Setup
+  if (user && !profile) {
+    return (
+      <main className="max-w-md mx-auto mt-20 p-8 bg-white/[0.02] border border-white/5 rounded-2xl space-y-6">
+        <div className="space-y-2 text-center">
+          <ShieldCheck className="w-12 h-12 text-primary mx-auto mb-4" />
+          <h2 className="text-2xl font-light tracking-tight text-lunar">Initialize Node</h2>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest">Select your unique nickname</p>
+        </div>
+        
+        <div className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="nickname" className="text-[10px] uppercase tracking-widest text-muted-foreground">Nickname (Permanent)</Label>
+            <Input 
+              id="nickname"
+              placeholder="e.g. Apollo_01"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              className="bg-white/5 border-white/10"
+            />
+          </div>
+          <Button 
+            disabled={!nickname || isSettingUp} 
+            onClick={handleCreateProfile}
+            className="w-full py-6 uppercase tracking-widest text-xs"
+          >
+            {isSettingUp ? 'Provisioning...' : 'Activate Identity'}
+          </Button>
+          <p className="text-[9px] text-center text-muted-foreground leading-relaxed">
+            Note: Identity changes require system credits or institutional clearance after initial setup.
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="rounded-full border-white/10 bg-white/5 hover:bg-white/10 transition-all">
-            <Search className="w-4 h-4 mr-2" /> Quick Search
-          </Button>
-          <Button className="rounded-full px-6 bg-lunar text-obsidian hover:bg-white transition-all shadow-lg shadow-white/5">
-            <Plus className="w-4 h-4 mr-2" /> New Scope
+      </main>
+    );
+  }
+
+  return (
+    <main className="p-6 max-w-6xl mx-auto space-y-10 animate-in fade-in duration-700">
+      {/* System Status / Branding */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Node Alpha-01 Active</span>
+          </div>
+          <h1 className="text-4xl font-headline font-extralight tracking-tight text-lunar">
+            Welcome, <span className="font-normal">{profile?.nickname || user?.displayName || 'Seeker'}</span>
+          </h1>
+          <p className="text-muted-foreground font-light max-w-xl text-sm leading-relaxed">
+            Personal Pedagogy Interface. Syncing insight with global learning resources.
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-4 bg-white/5 p-2 rounded-full border border-white/10">
+          <div className="px-4 text-center border-r border-white/10">
+            <p className="text-[9px] text-muted-foreground uppercase tracking-widest">Rewards</p>
+            <p className="text-sm font-mono text-lunar">{profile?.rewardsBalance?.toFixed(4) || '0.0000'} BTC</p>
+          </div>
+          <Button variant="ghost" size="sm" className="rounded-full text-xs">
+            Redeem <ChevronRight className="w-3 h-3 ml-1" />
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Scopes Sidebar/List */}
-        <div className="md:col-span-1 space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="text-xs uppercase tracking-widest font-medium text-muted-foreground">Recent Scopes</h3>
-            <FolderKanban className="w-3 h-3 text-muted-foreground/50" />
-          </div>
-          <div className="space-y-2">
-            {['Development', 'Personal', 'Archives'].map((scope) => (
-              <Button key={scope} variant="ghost" className="w-full justify-start text-sm font-light tracking-wide text-muted-foreground hover:text-lunar hover:bg-white/5 py-6">
-                <div className="w-2 h-2 rounded-full bg-primary/40 mr-3" />
-                {scope}
-              </Button>
+      {/* The Central Input Nexus */}
+      <section className="relative group">
+        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur opacity-25 group-hover:opacity-100 transition duration-1000" />
+        <QuickInput />
+      </section>
+
+      {/* Main Navigation Tabs */}
+      <div className="flex border-b border-white/5">
+        <button 
+          onClick={() => setActiveTab('scopes')}
+          className={`pb-4 px-6 text-xs uppercase tracking-[0.2em] font-medium transition-all ${activeTab === 'scopes' ? 'border-b-2 border-primary text-lunar' : 'text-muted-foreground'}`}
+        >
+          My Scopes
+        </button>
+        <button 
+          onClick={() => setActiveTab('hub')}
+          className={`pb-4 px-6 text-xs uppercase tracking-[0.2em] font-medium transition-all ${activeTab === 'hub' ? 'border-b-2 border-primary text-lunar' : 'text-muted-foreground'}`}
+        >
+          Learning Hub
+        </button>
+      </div>
+
+      {activeTab === 'scopes' ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {scopes?.map((scope) => (
+              <ScopeCard key={scope.id} scope={scope} />
             ))}
-          </div>
-        </div>
-
-        {/* Main Content Area */}
-        <div className="md:col-span-3 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card className="bg-white/[0.02] border-white/5 group hover:border-primary/20 transition-all cursor-pointer">
-              <CardHeader className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400">
-                    <StickyNote className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-mono text-muted-foreground">ID: 0x82...</span>
-                </div>
-                <CardTitle className="text-lg font-light tracking-wide">Celestial OS Logic</CardTitle>
-                <CardDescription className="text-xs text-muted-foreground font-light mt-1">
-                  Drafting the transposition requirements for the lunar engine...
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-6 pb-6 pt-0 flex justify-between items-center">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Modified 2m ago</span>
-                <div className="flex -space-x-2">
-                  <div className="w-6 h-6 rounded-full border border-white/10 bg-starlight" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/[0.02] border-white/5 group hover:border-primary/20 transition-all cursor-pointer">
-              <CardHeader className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-3 rounded-xl bg-green-500/10 text-green-400">
-                    <ListTodo className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-mono text-muted-foreground">ID: 0x41...</span>
-                </div>
-                <CardTitle className="text-lg font-light tracking-wide">Sync Orbit Controls</CardTitle>
-                <CardDescription className="text-xs text-muted-foreground font-light mt-1">
-                  [ ] Verify clock rotation logic<br/>
-                  [x] Implement focus mode toggle
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-6 pb-6 pt-0 flex justify-between items-center">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-widest">67% Complete</span>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Voice Input Action */}
-          <div className="relative group">
-            <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-            <Button variant="outline" className="w-full py-12 border-dashed border-white/10 bg-white/[0.01] hover:bg-white/[0.03] transition-all rounded-2xl flex flex-col gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
-                <Mic className="w-6 h-6 text-primary" />
+            <Button 
+              variant="outline" 
+              className="h-full min-h-[160px] border-dashed border-white/10 bg-white/[0.01] hover:bg-white/[0.03] transition-all rounded-xl flex flex-col gap-2 group"
+            >
+              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Plus className="w-5 h-5 text-muted-foreground" />
               </div>
-              <div className="text-center">
-                <p className="text-sm font-light tracking-widest uppercase">Start Voice Capture</p>
-                <p className="text-[10px] text-muted-foreground font-mono mt-1">Offline Whisper Processing Active</p>
-              </div>
+              <span className="text-xs uppercase tracking-widest text-muted-foreground">Initialize New Scope</span>
             </Button>
           </div>
+          
+          <div className="space-y-6">
+            <div className="p-6 rounded-xl bg-blue-500/5 border border-blue-500/10">
+              <h3 className="text-xs font-semibold uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Zap className="w-3 h-3 text-blue-400" /> AI Strategy
+              </h3>
+              <p className="text-xs text-muted-foreground font-light mb-4">
+                Based on your current activity, I suggest finalizing your "Learning Hub" profile setup today.
+              </p>
+              <Button variant="link" className="p-0 h-auto text-[10px] uppercase text-blue-400">View Full Plan</Button>
+            </div>
+            
+            <div className="p-6 rounded-xl bg-purple-500/5 border border-purple-500/10">
+              <h3 className="text-xs font-semibold uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Trophy className="w-3 h-3 text-purple-400" /> Challenges
+              </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] text-lunar/70">Algorithm Sprint</span>
+                  <span className="text-[10px] font-mono text-purple-400">Lv. 1</span>
+                </div>
+                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full w-1/3 bg-purple-500/50" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="p-6 rounded-xl bg-white/[0.02] border border-white/5 hover:border-primary/20 transition-all cursor-pointer space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="p-2 rounded-lg bg-orange-500/10 text-orange-400">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-mono text-green-500/60">+0.0001 BTC</span>
+            </div>
+            <h3 className="text-lg font-light">Resource Allocation Survey</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Help us identify the most critical physical resources needed in your local learning environment.
+            </p>
+            <Button className="w-full text-xs uppercase tracking-widest py-6">Begin Participation</Button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

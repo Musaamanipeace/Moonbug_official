@@ -1,47 +1,92 @@
 
 {
   "entities": {
-    "Scope": {
-      "title": "Scope",
-      "description": "A project or category container for grouping notes and tasks.",
+    "Profile": {
+      "title": "Student Profile",
+      "description": "Student identification and rewards tracking.",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "description": "Name of the scope" },
-        "description": { "type": "string", "description": "Brief purpose of the scope" },
-        "color": { "type": "string", "description": "Hex or HSL color for UI categorization" },
-        "icon": { "type": "string", "description": "Lucide icon name" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "nickname": { "type": "string" },
+        "schoolName": { "type": "string" },
+        "studentId": { "type": "string" },
+        "email": { "type": "string" },
+        "rewardsBalance": { "type": "number", "description": "Currency earned via surveys" },
+        "hasPaid": { "type": "boolean", "description": "Unlock nickname changes" }
+      },
+      "required": ["nickname", "studentId"]
+    },
+    "Scope": {
+      "title": "Scope",
+      "description": "A 'father class' container for grouping notes and tasks.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "color": { "type": "string" },
+        "icon": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "reminderAt": { "type": "string", "format": "date-time" },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "details": { "type": "string" },
+              "completed": { "type": "boolean" }
+            }
+          }
+        }
       },
       "required": ["name"]
     },
     "Note": {
       "title": "Note",
-      "description": "A productivity unit containing text, voice transcripts, or tasks.",
+      "description": "Specific productivity units.",
       "type": "object",
       "properties": {
         "title": { "type": "string" },
         "content": { "type": "string" },
-        "scopeId": { "type": "string", "description": "Reference to the parent scope" },
-        "type": { "type": "string", "enum": ["note", "task"] },
+        "scopeId": { "type": "string" },
+        "type": { "type": "string", "enum": ["note", "list", "todo", "idea", "event", "reminder", "deadline"] },
         "isCompleted": { "type": "boolean" },
-        "voiceDataUri": { "type": "string", "description": "Stored base64 audio if recorded" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "voiceDataUri": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["content", "scopeId"]
+    },
+    "Survey": {
+      "title": "Survey",
+      "description": "Institutional data collection forms.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "reward": { "type": "number" },
+        "questions": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["available", "completed"] }
+      }
     }
   },
   "auth": {
     "providers": ["google.com"]
   },
   "firestore": {
+    "/users/{userId}/profile": {
+      "schema": "Profile",
+      "description": "Student identity"
+    },
     "/users/{userId}/scopes/{scopeId}": {
       "schema": "Scope",
-      "description": "User-defined project containers"
+      "description": "Category containers"
     },
     "/users/{userId}/notes/{noteId}": {
       "schema": "Note",
-      "description": "Productivity notes and tasks"
+      "description": "Productivity entries"
+    },
+    "/surveys/{surveyId}": {
+      "schema": "Survey",
+      "description": "Global learning surveys"
     }
   }
 }
