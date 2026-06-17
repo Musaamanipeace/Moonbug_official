@@ -5,11 +5,24 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Moon, LayoutDashboard, Compass } from 'lucide-react';
+import { Moon, LayoutDashboard, Compass, StickyNote, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth, useUser } from '@/firebase';
+import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 
 export function Header() {
   const pathname = usePathname();
+  const { auth } = useAuth();
+  const { user } = useUser();
+
+  const handleAuth = () => {
+    if (user) {
+      signOut(auth!);
+    } else {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth!, provider);
+    }
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 h-16 border-b border-white/5 bg-background/80 backdrop-blur-md z-[100] flex items-center justify-between px-8">
@@ -51,11 +64,31 @@ export function Header() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="h-4 w-[1px] bg-white/10 mx-2" />
-        <span className="text-[10px] font-mono text-muted-foreground tracking-tighter uppercase">
-          System Status: Nominal
-        </span>
+      <div className="flex items-center gap-6">
+        <div className="hidden md:flex flex-col items-end">
+          <span className="text-[10px] font-mono text-muted-foreground tracking-tighter uppercase">
+            Whisper Node: Ready
+          </span>
+          <span className="text-[10px] font-mono text-green-500/60 tracking-tighter uppercase">
+            Sync: Nominal
+          </span>
+        </div>
+        <div className="h-6 w-[1px] bg-white/10" />
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleAuth}
+          className="text-xs tracking-widest uppercase font-light text-muted-foreground hover:text-lunar"
+        >
+          {user ? (
+            <div className="flex items-center gap-2">
+              <span className="max-w-[100px] truncate">{user.displayName}</span>
+              <User className="w-3 h-3" />
+            </div>
+          ) : (
+            'Authenticate'
+          )}
+        </Button>
       </div>
     </header>
   );

@@ -1,0 +1,47 @@
+
+{
+  "entities": {
+    "Scope": {
+      "title": "Scope",
+      "description": "A project or category container for grouping notes and tasks.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the scope" },
+        "description": { "type": "string", "description": "Brief purpose of the scope" },
+        "color": { "type": "string", "description": "Hex or HSL color for UI categorization" },
+        "icon": { "type": "string", "description": "Lucide icon name" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
+    },
+    "Note": {
+      "title": "Note",
+      "description": "A productivity unit containing text, voice transcripts, or tasks.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "scopeId": { "type": "string", "description": "Reference to the parent scope" },
+        "type": { "type": "string", "enum": ["note", "task"] },
+        "isCompleted": { "type": "boolean" },
+        "voiceDataUri": { "type": "string", "description": "Stored base64 audio if recorded" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["content", "scopeId"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com"]
+  },
+  "firestore": {
+    "/users/{userId}/scopes/{scopeId}": {
+      "schema": "Scope",
+      "description": "User-defined project containers"
+    },
+    "/users/{userId}/notes/{noteId}": {
+      "schema": "Note",
+      "description": "Productivity notes and tasks"
+    }
+  }
+}
