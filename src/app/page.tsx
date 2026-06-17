@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useUser, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { QuickInput } from '@/components/nexus/quick-input';
 import { ScopeCard } from '@/components/nexus/scope-card';
@@ -10,10 +10,10 @@ import { Label } from '@/components/ui/label';
 import { 
   Plus, 
   Trophy, 
-  MessageSquare, 
   Zap,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  MessageSquare
 } from 'lucide-react';
 import { collection, query, orderBy, doc, setDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -81,8 +81,8 @@ export default function LuminousDashboard() {
       <main className="max-w-md mx-auto mt-20 p-8 bg-white/[0.02] border border-white/5 rounded-2xl space-y-6">
         <div className="space-y-2 text-center">
           <ShieldCheck className="w-12 h-12 text-primary mx-auto mb-4" />
-          <h2 className="text-2xl font-light tracking-tight text-lunar">Initialize Node</h2>
-          <p className="text-xs text-muted-foreground uppercase tracking-widest">Select your unique nickname</p>
+          <h2 className="text-2xl font-light tracking-tight text-lunar">Moonbug Activation</h2>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest">Select your unique node identifier</p>
         </div>
         
         <div className="space-y-4 pt-4">
@@ -90,7 +90,7 @@ export default function LuminousDashboard() {
             <Label htmlFor="nickname" className="text-[10px] uppercase tracking-widest text-muted-foreground">Nickname (Permanent)</Label>
             <Input 
               id="nickname"
-              placeholder="e.g. Apollo_01"
+              placeholder="e.g. Explorer_01"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               className="bg-white/5 border-white/10"
@@ -101,10 +101,10 @@ export default function LuminousDashboard() {
             onClick={handleCreateProfile}
             className="w-full py-6 uppercase tracking-widest text-xs"
           >
-            {isSettingUp ? 'Provisioning...' : 'Activate Identity'}
+            {isSettingUp ? 'Provisioning...' : 'Initialize Identity'}
           </Button>
           <p className="text-[9px] text-center text-muted-foreground leading-relaxed">
-            Note: Identity changes require system credits or institutional clearance after initial setup.
+            Note: Identity changes require system credits after initial node setup.
           </p>
         </div>
       </main>
@@ -118,20 +118,20 @@ export default function LuminousDashboard() {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Node Alpha-01 Active</span>
+            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Moonbug Node Alpha-01 Active</span>
           </div>
           <h1 className="text-4xl font-headline font-extralight tracking-tight text-lunar">
             Welcome, <span className="font-normal">{profile?.nickname || user?.displayName || 'Seeker'}</span>
           </h1>
           <p className="text-muted-foreground font-light max-w-xl text-sm leading-relaxed">
-            Personal Pedagogy Interface. Syncing insight with global learning resources.
+            Offline Productivity & Learning Interface. Syncing insight with global pedagogy.
           </p>
         </div>
         
         <div className="flex items-center gap-4 bg-white/5 p-2 rounded-full border border-white/10">
           <div className="px-4 text-center border-r border-white/10">
-            <p className="text-[9px] text-muted-foreground uppercase tracking-widest">Rewards</p>
-            <p className="text-sm font-mono text-lunar">{profile?.rewardsBalance?.toFixed(4) || '0.0000'} BTC</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-widest">Balance</p>
+            <p className="text-sm font-mono text-lunar">{profile?.rewardsBalance?.toFixed(4) || '0.0000'} SAT</p>
           </div>
           <Button variant="ghost" size="sm" className="rounded-full text-xs">
             Redeem <ChevronRight className="w-3 h-3 ml-1" />
@@ -174,32 +174,32 @@ export default function LuminousDashboard() {
               <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Plus className="w-5 h-5 text-muted-foreground" />
               </div>
-              <span className="text-xs uppercase tracking-widest text-muted-foreground">Initialize New Scope</span>
+              <span className="text-xs uppercase tracking-widest text-muted-foreground">New Scope</span>
             </Button>
           </div>
           
           <div className="space-y-6">
             <div className="p-6 rounded-xl bg-blue-500/5 border border-blue-500/10">
               <h3 className="text-xs font-semibold uppercase tracking-widest mb-4 flex items-center gap-2">
-                <Zap className="w-3 h-3 text-blue-400" /> AI Strategy
+                <Zap className="w-3 h-3 text-blue-400" /> AI Insights
               </h3>
               <p className="text-xs text-muted-foreground font-light mb-4">
-                Based on your current activity, I suggest finalizing your "Learning Hub" profile setup today.
+                Strategy: Focus on "Physics Hub" surveys today to boost your node rewards.
               </p>
-              <Button variant="link" className="p-0 h-auto text-[10px] uppercase text-blue-400">View Full Plan</Button>
+              <Button variant="link" className="p-0 h-auto text-[10px] uppercase text-blue-400">Expand Strategy</Button>
             </div>
             
             <div className="p-6 rounded-xl bg-purple-500/5 border border-purple-500/10">
               <h3 className="text-xs font-semibold uppercase tracking-widest mb-4 flex items-center gap-2">
-                <Trophy className="w-3 h-3 text-purple-400" /> Challenges
+                <Trophy className="w-3 h-3 text-purple-400" /> Achievements
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-lunar/70">Algorithm Sprint</span>
-                  <span className="text-[10px] font-mono text-purple-400">Lv. 1</span>
+                  <span className="text-[10px] text-lunar/70">Note Streak</span>
+                  <span className="text-[10px] font-mono text-purple-400">3 Days</span>
                 </div>
                 <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full w-1/3 bg-purple-500/50" />
+                  <div className="h-full w-3/4 bg-purple-500/50" />
                 </div>
               </div>
             </div>
@@ -212,13 +212,13 @@ export default function LuminousDashboard() {
               <div className="p-2 rounded-lg bg-orange-500/10 text-orange-400">
                 <MessageSquare className="w-5 h-5" />
               </div>
-              <span className="text-[10px] font-mono text-green-500/60">+0.0001 BTC</span>
+              <span className="text-[10px] font-mono text-green-500/60">+0.0050 SAT</span>
             </div>
-            <h3 className="text-lg font-light">Resource Allocation Survey</h3>
+            <h3 className="text-lg font-light">Community Resource Survey</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Help us identify the most critical physical resources needed in your local learning environment.
+              Identify survival resources needed in your local learning zone.
             </p>
-            <Button className="w-full text-xs uppercase tracking-widest py-6">Begin Participation</Button>
+            <Button className="w-full text-xs uppercase tracking-widest py-6">Begin Survey</Button>
           </div>
         </div>
       )}

@@ -1,11 +1,10 @@
-
 "use client";
 
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Moon, LayoutDashboard, Compass, StickyNote, User } from 'lucide-react';
+import { Moon, LayoutDashboard, Compass, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
@@ -31,7 +30,7 @@ export function Header() {
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
             <Compass className="w-4 h-4 text-primary" />
           </div>
-          <span className="font-headline font-light tracking-widest uppercase text-sm">Celestial OS</span>
+          <span className="font-headline font-light tracking-widest uppercase text-sm">Moonbug</span>
         </Link>
 
         <nav className="flex items-center gap-4">
@@ -67,7 +66,7 @@ export function Header() {
       <div className="flex items-center gap-6">
         <div className="hidden md:flex flex-col items-end">
           <span className="text-[10px] font-mono text-muted-foreground tracking-tighter uppercase">
-            Whisper Node: Ready
+            Moon Node: Ready
           </span>
           <span className="text-[10px] font-mono text-green-500/60 tracking-tighter uppercase">
             Sync: Nominal

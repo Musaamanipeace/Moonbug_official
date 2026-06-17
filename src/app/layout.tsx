@@ -4,8 +4,8 @@ import { Header } from '@/components/navigation/header';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Celestial OS | High-Fidelity Tracking',
-  description: 'A minimalist high-fidelity visual representation of lunar phases and celestial positioning.',
+  title: 'Moonbug | Productivity & Learning OS',
+  description: 'An offline-first platform for productivity notes, voice input, and educational rewards.',
 };
 
 export default function RootLayout({
